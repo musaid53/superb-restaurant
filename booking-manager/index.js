@@ -49,69 +49,30 @@ async function health(ctx) {
 
 async function createTable(ctx) {
   const table = new Table(ctx.request.body);
-  // const post = ctx.request.body;
-  
-  table.save()
+
+  await table.save()
   .then((data) => {
     if(data){
       ctx.body = data;
       console.log("table created")
     }else{
       console.log("table not  created")
-      //ctx.throw(400);
+      ctx.body = {
+        message: 'Table creation failed.'
+      };
     }
   })
-  .catch((err) => {
-    ctx.throw(400,'Error Message');
-  });
-  
+  .catch((err) => errHandler(err, ctx, 406));
 }
 
 
-app.use(async (ctx, next) => {
-  try {
-    await next();
-  } catch (err) {
-    console.log('asdadasdas');
-    // will only respond with JSON
-    ctx.status = err.statusCode || err.status || 500;
+
+function errHandler(err, ctx, errStatus){
+  console.log('error catch: %s', err);
+  ctx.status =  errStatus|| err.statusCode || err.status || 500;
     ctx.body = {
       message: err.message
     };
-  }
-})
+}
 
-
-// app.use(async ctx => {
-//     ctx.body = 'Up';
-// });
-/*
-app.use(async function(ctx, next) {
-  try {
-    await next();
-  } catch (err) {
-    console.log('said');
-    // some errors will have .status
-    // however this is not a guarantee
-    ctx.status = err.status || 500;
-    ctx.type = 'html';
-    ctx.body = '<p>Something <em>exploded</em>, please contact Maru.</p>';
-
-    // since we handled this manually we'll
-    // want to delegate to the regular app
-    // level error handling as well so that
-    // centralized still functions correctly.
-    ctx.app.emit('error', err, ctx);
-  }
-});
-
-
-app.on('error', function(err) {
-  console.log('err');
-  if (process.env.NODE_ENV != 'test') {
-    console.log('sent error %s to the cloud', err.message);
-    console.log(err);
-  }
-});
-*/
 app.listen(3000);
