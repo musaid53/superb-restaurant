@@ -15,6 +15,10 @@ const Configs = mongoose.model('configs');
 app.use(logger());
 app.use(koaBody());
 
+Date.prototype.addHours = function (h) {
+  this.setTime(this.getTime() + (h * 60 * 60 * 1000));
+  return this;
+}
 
 mongoose
   .connect(url, {
@@ -38,6 +42,8 @@ router.get('/', health)
   .get('/list-tables', listTables)
   .post('/reserve', makeReservation)
   .post('/work-hours', setWorkHours)
+  .post('/validate', validate)
+  .get('/list-all-reservations', listAllReservations)
   ;
 
 
@@ -110,15 +116,16 @@ async function listTables(ctx) {
 
 
 /**
- * Create a reservation to table
+ * Create a reservation
  */
 
 async function makeReservation(ctx) {
+
   await Table.findById(ctx.request.body.tableId)
     .then((table) => {
       if (table) {
         console.log("table found");
-        ctx.request.body.endDate = ctx.request.body.endDate || Date.now();
+        ctx.request.body.endDate = ctx.request.body.endDate || new Date(ctx.request.body.startDate).addHours(1);
         const reservation = new Reservation(ctx.request.body);
         return reservation.save().then(savedReservation => {
           ctx.body = savedReservation;
@@ -135,12 +142,25 @@ async function makeReservation(ctx) {
 }
 
 /**
+ * list reservations
+ */
+
+async function listAllReservations(ctx) {
+  await Reservation.find()
+    .then((reservations) => {
+      ctx.body = reservations;
+
+    })
+    .catch((err) => errHandler(err, ctx, 404));
+}
+
+/**
  * Set Work Hours
  */
 
 async function setWorkHours(ctx) {
 
- await Configs.findOne()
+  await Configs.findOne()
     .then((configs) => {
       if (configs) {
         console.log('config found');
@@ -150,14 +170,14 @@ async function setWorkHours(ctx) {
       } else {
         console.log('config not found');
         const newConfigs = new Configs({
-          entries:{} 
+          entries: {}
         });
         newConfigs.entries.set('open', ctx.request.body.open);
         newConfigs.entries.set('close', ctx.request.body.close);
         return newConfigs.save();
       }
-    }) 
-    .then((savedConfigs)=> {
+    })
+    .then((savedConfigs) => {
       console.log('configs saved!');
       ctx.body = savedConfigs.entries;
     })
@@ -167,7 +187,42 @@ async function setWorkHours(ctx) {
 
 
 
+async function validate(ctx) {
+  // todo sort
+  await Reservation.find({ tableId: ctx.request.body.tableId, })
+    .then((reservations) => {
 
+      let fileted = !reservations.some(reservation => validateInterval(ctx.request.body.startDate, ctx.request.body.endDate, reservation));
+      ctx.body = fileted;
+    })
+}
+
+function validateInterval(startDate, endDate, reservation) {
+  let start = new Date(startDate);
+  let end = new Date(endDate)
+  //not startDate between rsvStart and rsvEnd
+  if ( start >= reservation.startDate && start < reservation.endDate) {
+    console.log('reservation.startDate: %s , reservation.endDate:%s', reservation.startDate, reservation.endDate);
+    console.log('not startDate between rsvStart and rsvEnd');
+    return true;
+  }
+  //not endDate between rsvStart and rsvEnd
+  if (end > reservation.startDate && end <= reservation.endDate) {
+    console.log('reservation.startDate: %s , reservation.endDate:%s', reservation.startDate, reservation.endDate);
+    console.log('not endDate between rsvStart and rsvEnd');
+    return true;
+  }
+
+  //not  rsvStart >= startDate & rsvEnd <= endDate
+  if (reservation.startDate >= start && reservation.endDate <= end) {
+    console.log('reservation.startDate: %s , reservation.endDate:%s', reservation.startDate, reservation.endDate);
+    console.log('not  rsvStart >= startDate & rsvEnd <= endDate');
+    return true;
+  }
+
+  return false;
+
+}
 
 function errHandler(err, ctx, errStatus) {
   console.log('error catch: %s', err);

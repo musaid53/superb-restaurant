@@ -11,6 +11,9 @@ pids
 *.seed
 *.pid.lock
 
+#mongo queries
+*.mongodb
+
 
 # Bower dependency directory (https://bower.io/)
 bower_components
