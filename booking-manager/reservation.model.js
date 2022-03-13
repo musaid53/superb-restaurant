@@ -2,8 +2,10 @@ const mongoose = require('mongoose');
 
 // todo; auto increment
 var reservationSchema = mongoose.Schema({
-    tableId: {type: String, required: true},
-    peopleCount: {type: Number, required : true}
+    tableId: {type: Number, required: true},
+    peopleCount: {type: Number,  default: 1},
+    startDate : {type: Date, required: true},
+    endDate: {type: Date, required: true}
 });
 
 
