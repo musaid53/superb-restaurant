@@ -51,12 +51,13 @@ async function health(ctx) {
  */
 
 async function createTable(ctx) {
-  const table = new Table(ctx.request.body);
+  
+  const table = new Table(ctx.request.body.description);
 
-  await table.save(save)
+  await table.save(table)
     .then((data) => {
       if (data) {
-        ctx.body = data;
+        ctx.body = tableMapper(data);
         console.log("table created")
       } else {
         console.log("table not  created")
@@ -88,8 +89,13 @@ async function createTable(ctx) {
 async function listTables(ctx) {
   await Table.find()
     .then((tables) => {
-
-      ctx.body = tables;
+        
+      ctx.body = tables.map(it =>  {
+        return {
+          id : it.id,
+          description: it.description || 'No desc'
+        }
+      });
 
 
     })
@@ -107,6 +113,13 @@ function errHandler(err, ctx, errStatus) {
   ctx.body = {
     message: err.message
   };
+}
+
+function tableMapper(table) {
+  return {
+    description: table.description,
+    id: table.id
+  }
 }
 
 app.listen(3000);
