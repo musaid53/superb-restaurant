@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 
+// todo; auto increment
 var tableSchema = mongoose.Schema({
     _id: {type: String, required: true}
     // seq: { type: Number, default: 0 }
