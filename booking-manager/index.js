@@ -20,7 +20,7 @@ Date.prototype.addHours = function (h) {
   return this;
 }
 
-Date.prototype.getWeekDay = function() {
+Date.prototype.getWeekDay = function () {
   return weekdays[this.getDay()];
 }
 
@@ -44,9 +44,9 @@ router.get('/', health)
   .post('/create-table', createTable)
   .delete('/delete-all-tables', deleteAllTables)
   .get('/list-tables', listTables)
-  .post('/reserve', makeReservation)
+  .post('/reserve', validateMakeReservation)
   .post('/work-hours', setWorkHours)
-  .post('/validate', validate)
+  //.post('/validate', validate)
   .get('/list-all-reservations', listAllReservations)
   ;
 
@@ -132,9 +132,9 @@ async function makeReservation(ctx) {
           tableId: ctx.request.body.tableId,
           peopleCount: ctx.request.body.peopleCount,
           startDate: ctx.request.body.startDate,
-          endDate:ctx.request.body.endDate || new Date(ctx.request.body.startDate).addHours(1)
+          endDate: ctx.request.body.endDate || new Date(ctx.request.body.startDate).addHours(1)
         }
-        const reservation = new Reservation(ctx.request.body);
+        const reservation = new Reservation(reservationReq);
         return reservation.save().then(savedReservation => {
           ctx.body = savedReservation;
         });
@@ -167,31 +167,38 @@ async function listAllReservations(ctx) {
  */
 
 async function setWorkHours(ctx) {
-  
+
   let dayFromReq = ctx.request.body.day || Date.now().getWeekDay();
   //console.log(weekdays.some(day => day === dayFromReq));
-  if(!weekdays.some(day => day === dayFromReq)){
+  if (!weekdays.some(day => day === dayFromReq)) {
     ctx.status = 400;
     ctx.body = {
       message: 'day is invalid'
     };
-  }    
-  await Configs.find({day: dayFromReq})
+    return false;
+  }
+  await Configs.find({ day: dayFromReq })
     .then((configs) => {
-      if(configs.length > 1){
+      let timezone = ctx.request.body.timezone || 0;
+      if (configs.length > 1) {
         ctx.status = 401;
         return 'Duplicate conf found!';
-      }else if (configs.length == 1) {
+      } else if (configs.length == 1) {
         configs[0].starTime = ctx.request.body.startTime;
         configs[0].endTime = ctx.request.body.endTime;
+        configs[0].starTime.hour += timezone;
+        configs[0].endTime.hour += timezone;
         return configs[0].save();
       } else {
-        const newConfigs = new Configs({
+        const newConfig = new Configs({
           starTime: ctx.request.body.startTime,
           endTime: ctx.request.body.endTime,
-          day: dayFromReq
+          day: dayFromReq,
+          timezone: timezone
         });
-        return newConfigs.save();
+        newConfig.starTime.hour += timezone;
+        newConfig.endTime.hour += timezone;
+        return newConfig.save();
       }
     })
     .then((savedConfigs) => {
@@ -204,30 +211,60 @@ async function setWorkHours(ctx) {
 
 
 
-async function validate(ctx) {
-  let startDate = new Date(ctx.request.body.startDate); 
-  if(startDate< Date.now()){
-    ctx.body = {
+async function validateMakeReservation(ctx) {
+  let startDate = new Date(ctx.request.body.startDate);
+  let endDate = new Date(startDate).addHours(1);
+  /*
+  if (startDate < Date.now()) {
+
+    let err = {
       message: 'Date must be after from now!'
     };
+    errHandler(err, ctx, 400);
     return false;
   }
+  */
   let dayFromReq = startDate.getWeekDay();
-  await Configs.find({day: dayFromReq})
-  .then((configs) => {
-    if(configs.length != 1){
-
-    }else{
-      
-    }
-  })
-  .catch((err) => errHandler(err, ctx, 404));
-  await Reservation.find({ tableId: ctx.request.body.tableId, })
-    .then((reservations) => {
-
-      let fileted = !reservations.some(reservation => validateInterval(ctx.request.body.startDate, ctx.request.body.endDate, reservation));
-      ctx.body = fileted;
+  await Configs.find({ day: dayFromReq })
+    .then((configs) => {
+      if (configs.length != 1) {
+        throw new Error('Check working hours')
+      } else {
+        return configs[0];
+      }
     })
+    .then((workHour) => {
+
+      let workStartDate = new Date(startDate);
+      workStartDate.setHours(workHour.starTime.hour);
+      workStartDate.setMinutes(workHour.starTime.minute);
+
+      let workEndDate = new Date(endDate);
+      workEndDate.setHours(workHour.endTime.hour);
+      workEndDate.setMinutes(workHour.endTime.minute);
+
+      if (!(startDate >= workStartDate && endDate <= workEndDate)) {
+        throw new Error('Reservation time must be between working hours')
+      }
+
+    })
+    .then(() => Reservation.find({ tableId: ctx.request.body.tableId })
+      .then((reservations) => {
+
+        return !reservations.some(reservation => validateInterval(startDate, endDate, reservation));
+      }))
+    .then((isValid) => {
+      
+      if(isValid){
+        return makeReservation(ctx);
+      }else{
+        ctx.status = 400;
+        ctx.body = {
+          message: 'The reservation time is not available'
+        };
+      }
+    })  
+    .catch((err) => errHandler(err, ctx, 404));
 }
 
 function validateInterval(startDate, endDate, reservation) {
@@ -235,7 +272,7 @@ function validateInterval(startDate, endDate, reservation) {
   let start = new Date(startDate);
   let end = new Date(endDate)
   //not startDate between rsvStart and rsvEnd
-  if ( start >= reservation.startDate && start < reservation.endDate) {
+  if (start >= reservation.startDate && start < reservation.endDate) {
     console.log('reservation.startDate: %s , reservation.endDate:%s', reservation.startDate, reservation.endDate);
     console.log('not startDate between rsvStart and rsvEnd');
     return true;

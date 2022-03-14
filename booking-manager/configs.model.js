@@ -7,6 +7,7 @@ var timeSchema = mongoose.Schema({
 });
 var configSchema = mongoose.Schema({
   day: {type: String, required: true},
+  timezone: {type: Number, required: true},
   starTime: timeSchema,
   endTime: timeSchema
 });
