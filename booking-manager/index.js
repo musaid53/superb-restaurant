@@ -8,7 +8,7 @@ require('./table.model');
 require('./reservation.model');
 require('./configs.model');
 const url = process.env.MONGO_URL || "mongodb://localhost:27017/tables"
-
+const weekdays = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
 const Table = mongoose.model('tables');
 const Reservation = mongoose.model('reservations');
 const Configs = mongoose.model('configs');
@@ -18,6 +18,10 @@ app.use(koaBody());
 Date.prototype.addHours = function (h) {
   this.setTime(this.getTime() + (h * 60 * 60 * 1000));
   return this;
+}
+
+Date.prototype.getWeekDay = function() {
+  return weekdays[this.getDay()];
 }
 
 mongoose
@@ -124,8 +128,12 @@ async function makeReservation(ctx) {
   await Table.findById(ctx.request.body.tableId)
     .then((table) => {
       if (table) {
-        console.log("table found");
-        ctx.request.body.endDate = ctx.request.body.endDate || new Date(ctx.request.body.startDate).addHours(1);
+        let reservationReq = {
+          tableId: ctx.request.body.tableId,
+          peopleCount: ctx.request.body.peopleCount,
+          startDate: ctx.request.body.startDate,
+          endDate:ctx.request.body.endDate || new Date(ctx.request.body.startDate).addHours(1)
+        }
         const reservation = new Reservation(ctx.request.body);
         return reservation.save().then(savedReservation => {
           ctx.body = savedReservation;
@@ -159,27 +167,36 @@ async function listAllReservations(ctx) {
  */
 
 async function setWorkHours(ctx) {
-
-  await Configs.findOne()
+  
+  let dayFromReq = ctx.request.body.day || Date.now().getWeekDay();
+  //console.log(weekdays.some(day => day === dayFromReq));
+  if(!weekdays.some(day => day === dayFromReq)){
+    ctx.status = 400;
+    ctx.body = {
+      message: 'day is invalid'
+    };
+  }    
+  await Configs.find({day: dayFromReq})
     .then((configs) => {
-      if (configs) {
-        console.log('config found');
-        configs.entries.set('open', ctx.request.body.open);
-        configs.entries.set('close', ctx.request.body.close);
-        return configs.save();
+      if(configs.length > 1){
+        ctx.status = 401;
+        return 'Duplicate conf found!';
+      }else if (configs.length == 1) {
+        configs[0].starTime = ctx.request.body.startTime;
+        configs[0].endTime = ctx.request.body.endTime;
+        return configs[0].save();
       } else {
-        console.log('config not found');
         const newConfigs = new Configs({
-          entries: {}
+          starTime: ctx.request.body.startTime,
+          endTime: ctx.request.body.endTime,
+          day: dayFromReq
         });
-        newConfigs.entries.set('open', ctx.request.body.open);
-        newConfigs.entries.set('close', ctx.request.body.close);
         return newConfigs.save();
       }
     })
     .then((savedConfigs) => {
       console.log('configs saved!');
-      ctx.body = savedConfigs.entries;
+      ctx.body = savedConfigs;
     })
     .catch((err) => errHandler(err, ctx, 404));
 
@@ -188,7 +205,23 @@ async function setWorkHours(ctx) {
 
 
 async function validate(ctx) {
-  // todo sort
+  let startDate = new Date(ctx.request.body.startDate); 
+  if(startDate< Date.now()){
+    ctx.body = {
+      message: 'Date must be after from now!'
+    };
+    return false;
+  }
+  let dayFromReq = startDate.getWeekDay();
+  await Configs.find({day: dayFromReq})
+  .then((configs) => {
+    if(configs.length != 1){
+
+    }else{
+      
+    }
+  })
+  .catch((err) => errHandler(err, ctx, 404));
   await Reservation.find({ tableId: ctx.request.body.tableId, })
     .then((reservations) => {
 
@@ -198,6 +231,7 @@ async function validate(ctx) {
 }
 
 function validateInterval(startDate, endDate, reservation) {
+  // returns false if not valid
   let start = new Date(startDate);
   let end = new Date(endDate)
   //not startDate between rsvStart and rsvEnd

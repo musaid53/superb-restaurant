@@ -1,12 +1,14 @@
 const mongoose = require('mongoose');
 
 
-
+var timeSchema = mongoose.Schema({
+  hour: {type: Number, required: true},
+  minute: {type: Number, required: true},
+});
 var configSchema = mongoose.Schema({
-  entries: {
-    type: Map,
-    of: String
-  }
+  day: {type: String, required: true},
+  starTime: timeSchema,
+  endTime: timeSchema
 });
 
 
