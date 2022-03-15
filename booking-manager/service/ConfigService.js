@@ -1,4 +1,5 @@
 require('../models/configs.model');
+require('../utils');
 const mongoose = require("mongoose");
 const Configs = mongoose.model('configs');
 const dbConnection = require('./DbConnection');

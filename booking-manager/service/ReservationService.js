@@ -18,7 +18,11 @@ class ReservationService {
     }
 
     async deleteReservationById(id) {
-        return await Reservation.deleteOne({id : id})
+        return await Reservation.deleteOne({ id: id })
+    }
+
+    async updateReservation(ctx) {
+
     }
 
     async makeReservation(ctx) {
@@ -32,10 +36,18 @@ class ReservationService {
                         startDate: ctx.request.body.startDate,
                         endDate: ctx.request.body.endDate || new Date(ctx.request.body.startDate).addHours(1)
                     }
-                    const reservation = new Reservation(reservationReq);
-                    return reservation.save().then(savedReservation => {
-                        ctx.body = savedReservation;
-                    });
+                    if (ctx.request.body.reservationId) {
+                        let query = { _id: ctx.request.body.reservationId };
+                        return Reservation.findOneAndUpdate(query, reservationReq, { upsert: true, new: true }).then(savedReservation => {
+                            ctx.body = savedReservation;
+                        });
+                    } else {
+                        let reservation = new Reservation(reservationReq);
+                        return reservation.save().then(savedReservation => {
+                            ctx.body = savedReservation;
+                        });
+                    }
+
                 } else {
                     console.log("table not  found")
                     ctx.body = {
@@ -85,7 +97,7 @@ class ReservationService {
             })
             .then(() => Reservation.find({ tableId: ctx.request.body.tableId })
                 .then((reservations) => {
-
+                    reservations = ctx.request.body.reservationId ? reservations.filter(it => it.id != ctx.request.body.reservationId) : reservations;
                     return !reservations.some(reservation => validateInterval(startDate, endDate, reservation));
                 }))
             .then((isValid) => {

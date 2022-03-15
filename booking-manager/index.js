@@ -1,32 +1,17 @@
 const logger = require('koa-logger');
 const router = require('@koa/router')();
 const koaBody = require('koa-body');
-const mongoose = require("mongoose");
 const Koa = require('koa');
 const app = module.exports = new Koa();
-require('./models/reservation.model');
-require('./models/configs.model');
-const url = process.env.MONGO_URL || "mongodb://localhost:27017/tables"
-const weekdays = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
-const Reservation = mongoose.model('reservations');
+
 
 const TableService = require('./service/TableService');
 const ConfigService = require('./service/ConfigService');
 const ReservationService = require('./service/ReservationService');
 
-
-
 app.use(logger());
 app.use(koaBody());
 
-Date.prototype.addHours = function (h) {
-  this.setTime(this.getTime() + (h * 60 * 60 * 1000));
-  return this;
-}
-
-Date.prototype.getWeekDay = function () {
-  return weekdays[this.getDay()];
-}
 
 
 // route definitions
@@ -40,6 +25,7 @@ router.get('/', health)
   //.post('/validate', validate)
   .get('/list-all-reservations', listAllReservations)
   .delete('/reservation', deleteReservationById)
+  .post('/reserve', updateReservation)
   ;
 
 
@@ -159,6 +145,27 @@ async function validateMakeReservation(ctx) {
  */
 async function deleteReservationById(ctx) {
   let id = ctx.request.body.reservationId;
+  return await ReservationService.deleteReservationById(id)
+    .then((res) => {
+      let message ;
+      if (res) {
+        message = 'Deleted!';
+      } else {
+        message = 'Not Deleted!';
+        ctx.status = 400;
+      }
+      ctx.body = {
+        message: message
+      };
+    })
+    .catch((err) => errHandler(err, ctx, 404));
+}
+
+/**
+ * Delete a reservation 
+ */
+ async function updateReservation(ctx) {
+  ;
   return await ReservationService.deleteReservationById(id)
     .then((res) => {
       let message ;
