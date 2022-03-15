@@ -17,6 +17,9 @@ class ConfigService {
     async findByDay(day) {
         return await Configs.find({ day: day })
     }
+    async deleteAll(){
+        return await Configs.deleteMany({});
+    }
 
     async setWorkHours(ctx) {
         let dayFromReq = ctx.request.body.day || Date.now().getWeekDay();

@@ -13,16 +13,15 @@ class ReservationService {
         this.model = Reservation;
     }
 
+    async deleteAll(){
+        return await Reservation.deleteMany({});
+    }
     async listAllReservations() {
         return await Reservation.find();
     }
 
     async deleteReservationById(id) {
         return await Reservation.deleteOne({ id: id })
-    }
-
-    async updateReservation(ctx) {
-
     }
 
     async makeReservation(ctx) {

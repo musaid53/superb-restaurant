@@ -18,7 +18,7 @@ app.use(koaBody());
 
 router.get('/', health)
   .post('/create-table', createTable)
-  .delete('/delete-all-tables', deleteAllTables)
+  .delete('/delete-all', deleteAll)
   .get('/list-tables', listTables)
   .post('/reserve', validateMakeReservation)
   .post('/work-hours', setWorkHours)
@@ -65,12 +65,14 @@ async function createTable(ctx) {
  * delete all tables.
  */
 
-async function deleteAllTables(ctx) {
-  await TableService.deleteAll({})
+async function deleteAll(ctx) {
+  await ReservationService.deleteAll()
+    .then(() => TableService.deleteAll())
+    .then(() => ConfigService.deleteAll())
     .then(() => {
       ctx.body = {
-        message: 'All tables deleted'
-      };
+        message: 'All documents deleted'
+      }
     })
     .catch((err) => errHandler(err, ctx, 401));
 }
@@ -147,7 +149,7 @@ async function deleteReservationById(ctx) {
   let id = ctx.request.body.reservationId;
   return await ReservationService.deleteReservationById(id)
     .then((res) => {
-      let message ;
+      let message;
       if (res) {
         message = 'Deleted!';
       } else {
@@ -164,11 +166,11 @@ async function deleteReservationById(ctx) {
 /**
  * Delete a reservation 
  */
- async function updateReservation(ctx) {
+async function updateReservation(ctx) {
   ;
   return await ReservationService.deleteReservationById(id)
     .then((res) => {
-      let message ;
+      let message;
       if (res) {
         message = 'Deleted!';
       } else {

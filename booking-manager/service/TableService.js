@@ -14,8 +14,8 @@ class TableService {
         return await new Table(request).save();
     }
     //todo delete all reservations related to this table
-    async deleteAll(query) {
-        return await Table.deleteMany(query);
+    async deleteAll() {
+        return await Table.deleteMany({});
     }
     
     async listAll() {
