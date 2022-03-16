@@ -126,7 +126,6 @@ async function setWorkHours(ctx) {
 
   return await ConfigService.setWorkHours(ctx)
     .then((savedConfigs) => {
-      console.log('configs saved!');
       ctx.body = savedConfigs;
     })
     .catch((err) => errHandler(err, ctx, 404));

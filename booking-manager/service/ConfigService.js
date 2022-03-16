@@ -25,11 +25,7 @@ class ConfigService {
         let dayFromReq = ctx.request.body.day || Date.now().getWeekDay();
         //console.log(weekdays.some(day => day === dayFromReq));
         if (!weekdays.some(day => day === dayFromReq)) {
-            ctx.status = 400;
-            ctx.body = {
-                message: 'day is invalid'
-            };
-            return false;
+            throw new Error('day is invalid');
         }
         return await this.findByDay(dayFromReq)
             .then((configs) => {
