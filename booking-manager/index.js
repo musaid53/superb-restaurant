@@ -25,7 +25,6 @@ router.get('/', health)
   //.post('/validate', validate)
   .get('/list-all-reservations', listAllReservations)
   .delete('/reservation', deleteReservationById)
-  .post('/reserve', updateReservation)
   ;
 
 
@@ -146,27 +145,6 @@ async function validateMakeReservation(ctx) {
  */
 async function deleteReservationById(ctx) {
   let id = ctx.request.body.reservationId;
-  return await ReservationService.deleteReservationById(id)
-    .then((res) => {
-      let message;
-      if (res) {
-        message = 'Deleted!';
-      } else {
-        message = 'Not Deleted!';
-        ctx.status = 400;
-      }
-      ctx.body = {
-        message: message
-      };
-    })
-    .catch((err) => errHandler(err, ctx, 404));
-}
-
-/**
- * Delete a reservation 
- */
-async function updateReservation(ctx) {
-  ;
   return await ReservationService.deleteReservationById(id)
     .then((res) => {
       let message;

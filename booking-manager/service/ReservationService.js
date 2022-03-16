@@ -52,6 +52,7 @@ class ReservationService {
                     ctx.body = {
                         message: 'Table not found'
                     };
+                    ctx.status = 404;
                 }
 
             });
@@ -82,8 +83,8 @@ class ReservationService {
             .then((workHour) => {
 
                 let workStartDate = new Date(startDate);
-                workStartDate.setHours(workHour.starTime.hour);
-                workStartDate.setMinutes(workHour.starTime.minute);
+                workStartDate.setHours(workHour.startTime.hour);
+                workStartDate.setMinutes(workHour.startTime.minute);
 
                 let workEndDate = new Date(endDate);
                 workEndDate.setHours(workHour.endTime.hour);

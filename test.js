@@ -136,5 +136,136 @@ describe('Blog', function () {
 
         });
     });
+    describe('POST Make Reservation with non-existing table ', function () {
+        it('should give an error with table not found', function (done) {
+            request
+                .post('/reserve')
+                .send({
+                    "tableId": 123123,
+                    "peopleCount": 3,
+                    "startDate": "2022-03-15T14:00:00.000Z"
+                })
+                .end(function (err, res) {
+                    if (err) return done(err);
+                    res.body.should.have.property('message').which.equal('Table not found');
+                    res.status.should.equal(404);
+                    done();
+                });
+
+
+        });
+    });
+
+    describe('POST Make Reservation between working hours ', function () {
+        it('should create a reservation', function (done) {
+            request
+                .post('/reserve')
+                // todo: startDate mus be relative
+                .send({
+                    "tableId": 1,
+                    "peopleCount": 3,
+                    "startDate": "2022-03-15T14:00:00.000Z"
+                })
+                .end(function (err, res) {
+                    if (err) return done(err);
+                    res.body.should.have.property('peopleCount').which.equal(3);
+                    res.body.should.have.property('tableId').which.equal(1);
+                    res.body.should.have.property('startDate').which.equal('2022-03-15T14:00:00.000Z');
+                    res.body.should.have.property('endDate').which.equal('2022-03-15T15:00:00.000Z');
+                    res.status.should.equal(200);
+                    done();
+                });
+
+
+        });
+
+    });
+
+    describe('POST Make Reservation outside of working hours ', function () {
+        it('should give an error with Reservation time must be between working hours', function (done) {
+            request
+                .post('/reserve')
+                // todo: startDate mus be relative
+                .send({
+                    "tableId": 1,
+                    "peopleCount": 3,
+                    "startDate": "2022-03-15T06:00:00.000Z"
+                })
+                .end(function (err, res) {
+                    if (err) return done(err);
+                    res.body.should.have.property('message').which.equal('Reservation time must be between working hours');
+                    res.status.should.equal(404);
+                    done();
+                });
+
+
+        });
+    });
+
+    describe('POST Make Reservation on same reservation ', function () {
+        it('should give an error ', function (done) {
+            request
+                .post('/reserve')
+                // todo: startDate mus be relative
+                .send({
+                    "tableId": 1,
+                    "peopleCount": 3,
+                    "startDate": "2022-03-15T14:00:00.000Z"
+                })
+                .end(function (err, res) {
+                    if (err) return done(err);
+                    res.body.should.have.property('message').which.equal('The reservation time is not available');
+                    res.status.should.equal(400);
+                    done();
+                });
+
+
+        });
+    });
+
+    describe('POST List all reservations ', function () {
+        it('Lists all reservation, lengt should equal = 1 ', function (done) {
+            request
+                .get('/list-all-reservations')
+                .expect(200, function (err, res) {
+                    if (err) return done(err);
+                    res.body.should.have.lengthOf(1);
+                    done();
+                });
+
+
+        });
+    });
+
+    describe('POST List all reservations and update the people count ', function () {
+        it('Lists all reservation, lengt should equal = 1 ', function (done) {
+            request
+                .get('/list-all-reservations')
+                .expect(200, function (err, res) {
+                    if (err) return done(err);
+                    res.body.should.have.lengthOf(1);
+                    let reservationId = res.body[0]._id;
+                    request
+                        .post('/reserve')
+                        // todo: startDate mus be relative
+                        .send({
+                            "tableId": 1,
+                            "peopleCount": 22,
+                            "startDate": "2022-03-15T14:00:00.000Z",
+                            "reservationId": reservationId
+                        })
+                        .end(function (err, res) {
+                            if (err) return done(err);
+                            res.body.should.have.property('peopleCount').which.equal(22);
+                            res.body.should.have.property('tableId').which.equal(1);
+                            res.body.should.have.property('startDate').which.equal('2022-03-15T14:00:00.000Z');
+                            res.body.should.have.property('endDate').which.equal('2022-03-15T15:00:00.000Z');
+                            done();
+                        });
+                });
+
+
+        });
+    });
 
 });
