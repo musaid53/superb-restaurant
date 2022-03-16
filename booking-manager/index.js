@@ -148,11 +148,11 @@ async function deleteReservationById(ctx) {
   return await ReservationService.deleteReservationById(id)
     .then((res) => {
       let message;
-      if (res) {
-        message = 'Deleted!';
-      } else {
+      if (res.deletedCount == 0) {
         message = 'Not Deleted!';
         ctx.status = 400;
+      } else {
+        message = 'Deleted!';
       }
       ctx.body = {
         message: message
