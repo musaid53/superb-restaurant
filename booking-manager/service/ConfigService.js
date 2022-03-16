@@ -38,19 +38,19 @@ class ConfigService {
                     ctx.status = 401;
                     return 'Duplicate conf found!';
                 } else if (configs.length == 1) {
-                    configs[0].starTime = ctx.request.body.startTime;
+                    configs[0].startTime = ctx.request.body.startTime;
                     configs[0].endTime = ctx.request.body.endTime;
-                    configs[0].starTime.hour += timezone;
+                    configs[0].startTime.hour += timezone;
                     configs[0].endTime.hour += timezone;
                     return configs[0].save();
                 } else {
                     const newConfig = new Configs({
-                        starTime: ctx.request.body.startTime,
+                        startTime: ctx.request.body.startTime,
                         endTime: ctx.request.body.endTime,
                         day: dayFromReq,
                         timezone: timezone
                     });
-                    newConfig.starTime.hour += timezone;
+                    newConfig.startTime.hour += timezone;
                     newConfig.endTime.hour += timezone;
                     return newConfig.save();
                 }

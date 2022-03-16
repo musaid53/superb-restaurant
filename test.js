@@ -12,7 +12,7 @@ describe('Blog', function () {
         console.log('deleting all tables');
         //await request.delete('/delete-all');
         await conn.then((connection) => {
-            connection.connection.db.dropDatabase(function(err, result){
+            connection.connection.db.dropDatabase(function (err, result) {
                 console.log('db deleted');
             });
         });
@@ -49,7 +49,7 @@ describe('Blog', function () {
         });
     });
     describe('POST /create-table', function () {
-        it('should create a table with corrent id', function () {
+        it('should create a table with corrent id, and list correctly', function (done) {
             request
                 .post('/create-table')
                 .send({ description: "second table" })
@@ -64,6 +64,33 @@ describe('Blog', function () {
                             res.body.should.have.lengthOf(2);
                             done();
                         });
+                });
+
+
+        });
+    });
+
+    describe('POST /work-hours', function () {
+        it('should set up work hours', function (done) {
+            request
+                .post('/work-hours')
+                .send({
+                    "day": "tuesday",
+                    "startTime" : {"hour": 9, "minute": 0},
+                    "endTime":  {"hour": 18, "minute": 0},
+                    "timezone": 3
+                })
+                .end(function (err, res) {
+                    if (err) return done(err);
+
+                    res.body.should.have.property('day').equal('tuesday');
+                    res.body.should.have.property('startTime');
+                    res.body.should.have.property('endTime');
+                    res.body.startTime.should.have.property('hour').which.equal(12);
+                    res.body.startTime.should.have.property('minute').which.equal(0);
+                    res.body.endTime.should.have.property('hour').which.equal(21);
+                    res.body.endTime.should.have.property('minute').which.equal(0);
+                    done();
                 });
 
 
