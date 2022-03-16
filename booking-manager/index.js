@@ -3,6 +3,7 @@ const router = require('@koa/router')();
 const koaBody = require('koa-body');
 const Koa = require('koa');
 const app = module.exports = new Koa();
+require("dotenv").config();
 
 
 const TableService = require('./service/TableService');
@@ -115,6 +116,7 @@ async function deleteAll(ctx) {
 async function listTables(ctx) {
   await TableService.listAll()
     .then((tables) => {
+      console.log(process.env.MONGO_URL);
       ctx.body = tables.map(it => {
         return {
           id: it.id,
