@@ -9,7 +9,7 @@ const mongoose = require("mongoose");
 
 describe('Blog', function () {
     before(async function () {
-        console.log('deleting all tables');
+        console.log('deleting all db');
         //await request.delete('/delete-all');
         await conn.then((connection) => {
             connection.connection.db.dropDatabase(function (err, result) {
@@ -365,11 +365,8 @@ describe('Blog', function () {
                     res.body.should.have.lengthOf(1);
                     let reservationId = res.body[0]._id;
                     request
-                        .delete('/reservation')
+                        .delete(`/reservation/${reservationId}`)
                         // todo: startDate mus be relative
-                        .send({
-                            "id": reservationId
-                        })
                         .end(function (err, res2) {
                             if (err) return done(err);
                             res2.body.should.have.property('message').which.equal('Deleted!');
@@ -385,11 +382,8 @@ describe('Blog', function () {
     describe('DELETE a reservation which doesnt exist ', function () {
         it('should give an error with Not Deleted!', function (done) {
             request
-                .delete('/reservation')
+                .delete(`/reservation/123123123123`)
                 // todo: startDate mus be relative
-                .send({
-                    "id": "123123123123"
-                })
                 .end(function (err, res2) {
                     if (err) return done(err);
                     res2.body.should.have.property('message').which.equal('Not Deleted!');
@@ -464,6 +458,27 @@ describe('Blog', function () {
         });
     });
 
+    describe('DELETE the table which has reservations', function () {
+        it('should delete table and all related reservations', function (done) {
+            request
+                .delete('/delete-table/1')
+                // todo: startDate mus be relative
+                .end(function (err, res) {
+                    if (err) return done(err);
+                    res.body.should.have.property('message').which.equal('Deleted!');
+                    res.status.should.equal(200);
+                    request
+                        .get('/reservation-by-table/1')
+                        .expect(200, function (err, res) {
+                            if (err) return done(err);
+                            res.body.should.have.lengthOf(0);
+                            done();
+                        });
 
+                });
+
+
+        });
+    });
 
 });

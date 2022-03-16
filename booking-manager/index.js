@@ -24,7 +24,9 @@ router.get('/', health)
   .post('/work-hours', setWorkHours)
   //.post('/validate', validate)
   .get('/list-all-reservations', listAllReservations)
-  .delete('/reservation', deleteReservationById)
+  .get('/reservation-by-table/:tableId', listAllReservations)
+  .delete('/reservation/:reservationId', deleteReservationById)
+  .delete('/delete-table/:tableId', deleteTableById)
   ;
 
 
@@ -56,6 +58,36 @@ async function createTable(ctx) {
           message: 'Table creation failed.'
         };
       }
+    })
+    .catch((err) => errHandler(err, ctx, 406));
+}
+
+/**
+ * Delete a table.
+ */
+
+async function deleteTableById(ctx) {
+  let tableId = ctx.params.tableId;
+  await TableService.deleteById(tableId)
+    .then((data) => {
+      if (data.deletedCount == 0) {
+        return data
+      } else {
+        return ReservationService.deleteReservationByTableId(tableId)
+          .then(() => data);
+      }
+    })
+    .then((res) => {
+      let message;
+      if (res.deletedCount == 0) {
+        message = 'Not Found!';
+        ctx.status = 400;
+      } else {
+        message = 'Deleted!';
+      }
+      ctx.body = {
+        message: message
+      };
     })
     .catch((err) => errHandler(err, ctx, 406));
 }
@@ -109,7 +141,8 @@ async function makeReservation(ctx) {
  */
 
 async function listAllReservations(ctx) {
-  await ReservationService.listAllReservations()
+  let tableId = ctx.params.tableId;
+  await ReservationService.listAllReservations(tableId)
     .then((reservations) => {
       ctx.body = reservations;
 
@@ -144,7 +177,7 @@ async function validateMakeReservation(ctx) {
  * Delete a reservation 
  */
 async function deleteReservationById(ctx) {
-  let id = ctx.request.body.reservationId;
+  let id = ctx.params.reservationId;
   return await ReservationService.deleteReservationById(id)
     .then((res) => {
       let message;

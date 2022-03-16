@@ -16,12 +16,20 @@ class ReservationService {
     async deleteAll(){
         return await Reservation.deleteMany({});
     }
-    async listAllReservations() {
+    async listAllReservations(tableId) {
+        if(tableId){
+            return await Reservation.find({tableId: tableId});
+        }
         return await Reservation.find();
+        
     }
 
     async deleteReservationById(id) {
-        return await Reservation.deleteOne({ id: id })
+        let objId = mongoose.Types.ObjectId(id.trim()); 
+        return await Reservation.deleteOne({ _id: objId })
+    }
+    async deleteReservationByTableId(id) {
+        return await Reservation.deleteMany({ tableId: id })
     }
 
     async makeReservation(ctx) {

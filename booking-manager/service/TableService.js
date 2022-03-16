@@ -24,6 +24,9 @@ class TableService {
     async findById(id) {
         return await Table.findById(id);
     }
+    async deleteById(id) {
+        return await Table.deleteOne({_id: id })
+    }
 
 
 };
