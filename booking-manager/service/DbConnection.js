@@ -6,8 +6,9 @@ module.exports = mongoose
         useNewUrlParser: true,
         useUnifiedTopology: true,
     })
-    .then(() => {
+    .then((connection) => {
         console.log("Connection established ");
+        return connection;
     })
     .catch((err) => {
         console.log("Connection failed");

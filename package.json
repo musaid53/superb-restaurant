@@ -26,6 +26,6 @@
     "why-is-node-running": "^2.2.1"
   },
   "scripts": {
-    "test": "npx mocha"
+    "test": "npx mocha --exit"
   }
 }
